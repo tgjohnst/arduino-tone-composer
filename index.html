@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arduino Tone Melody Designer & Simulator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .code-font {
+      font-family: 'Fira Code', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+
+  <!-- Header Banner -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <!-- Arduino-like Custom Teal Icon -->
+        <div class="h-10 w-10 rounded-xl bg-teal-500 flex items-center justify-center shadow-[0_0_15px_rgba(20,184,166,0.4)]">
+          <svg class="h-6 w-6 text-slate-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            Arduino Tone Melody Designer
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/25">v1.1</span>
+          </h1>
+          <p class="text-xs text-slate-400">Visual piano roll to Arduino <code class="bg-slate-800 px-1 py-0.5 rounded text-teal-400">tone()</code> arrays compiler & simulator</p>
+        </div>
+      </div>
+      
+      <!-- Preset Loader -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400 font-medium hidden sm:inline">Load Preset:</span>
+        <select id="presetSelect" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-teal-500 transition-colors cursor-pointer">
+          <option value="custom" disabled selected>-- Select a Melody --</option>
+          <option value="mario">Super Mario Intro Riff</option>
+          <option value="starwars">Star Wars Imperial March Theme</option>
+          <option value="zelda">Zelda Secret Arpeggio</option>
+          <option value="scale">Major Pentatonic Run (Octaves 4-6)</option>
+        </select>
+        <button id="loadPresetBtn" class="bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow-[0_2px_10px_rgba(20,184,166,0.2)]">
+          Load
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Left Workspace Panel (Visual sequencer & Playback controller) -->
+    <section class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Timeline Controls Toolbar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4">
+        
+        <!-- Simulation Controls -->
+        <div class="flex items-center gap-2">
+          <button id="playBtn" class="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/30">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Play Sim
+          </button>
+          <button id="pauseBtn" class="hidden flex items-center gap-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            Pause
+          </button>
+          <button id="stopBtn" class="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 font-bold text-xs px-3.5 py-2 rounded-lg border border-slate-700 transition-all">
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+            Stop
+          </button>
+          <div class="h-6 w-px bg-slate-800 mx-1"></div>
+          <button id="clearBtn" class="flex items-center gap-1 bg-rose-950/40 hover:bg-rose-900/60 active:bg-rose-950/80 text-rose-300 font-semibold text-xs px-3 py-2 rounded-lg border border-rose-900/50 transition-all">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Clear All
+          </button>
+        </div>
+
+        <!-- Tool / Mode Selectors -->
+        <div class="flex items-center gap-2">
+          <div class="bg-slate-950 border border-slate-800 rounded-lg p-0.5 flex">
+            <button id="toolPencil" class="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/20 transition-all" title="Add / Extend Notes">
+              ✏️ Draw / Resize
+            </button>
+            <button id="toolEraser" class="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all" title="Remove note blocks">
+              🧹 Eraser
+            </button>
+          </div>
+        </div>
+
+        <!-- Synthesizer wave settings -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400">Buzzer Wave:</span>
+          <select id="waveSelect" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">
+            <option value="square" selected>Square (Classic Piezo)</option>
+            <option value="sine">Sine (Pure Synth)</option>
+            <option value="triangle">Triangle (Chiptune)</option>
+            <option value="sawtooth">Sawtooth (Gritty Horn)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Main Visual Grid Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col relative select-none">
+        
+        <!-- Timeline header marker -->
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-400 tracking-wider flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-teal-400 animate-pulse"></span>
+            PIANO ROLL SEQUENCE EDITOR (MAX 5.0 SECONDS)
+          </span>
+          <span class="text-xs font-semibold text-teal-400 bg-teal-950/40 px-2 py-1 rounded border border-teal-900/50" id="statBadge">
+            0 notes placed
+          </span>
+        </div>
+
+        <!-- Scrollable Sequencer Frame (Unified container for absolute alignment) -->
+        <div class="flex-grow overflow-x-auto overflow-y-auto max-h-[820px] border border-slate-800 rounded-lg bg-slate-950 relative" id="gridContainer">
+          <div class="flex flex-row relative" style="width: 1180px; height: 792px;">
+            
+            <!-- Sticky Column: Note Names -->
+            <div class="w-20 flex-shrink-0 select-none bg-slate-950 border-r border-slate-800 flex flex-col z-20 sticky left-0 h-full" id="noteLabels">
+              <!-- Dynamically populated piano key names -->
+            </div>
+
+            <!-- Canvas Drawing Area -->
+            <div class="relative flex-grow h-full">
+              <!-- Grid background & note drawing surface -->
+              <canvas id="pianoRollCanvas" width="1100" height="792" class="absolute top-0 left-0 block cursor-crosshair"></canvas>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Help Info Footer -->
+        <div class="flex flex-wrap items-center justify-between mt-3 text-slate-400 text-xs gap-2">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-teal-500/80 inline-block"></span> Note Block</span>
+            <span class="flex items-center gap-1"><span class="w-3.5 h-1 bg-red-500 inline-block"></span> Playhead</span>
+            <span class="flex items-center gap-1"><kbd class="bg-slate-800 text-slate-300 px-1 py-0.5 rounded border border-slate-700 text-[10px]">Double Click</kbd> Note to delete</span>
+          </div>
+          <div id="hoverPitchDisplay" class="text-teal-400 font-semibold font-mono tracking-wider">
+            Hover grid to explore
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live Bidirectional Raw Arrays Section -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold tracking-wider text-slate-200 uppercase flex items-center gap-2">
+            <svg class="h-4 w-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Bidirectional Array Synchronizer
+          </h2>
+          <span class="text-[10px] text-slate-400 italic">Editing here parses back to the visual grid!</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Melody Array -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>Melody Frequencies Array <code class="text-teal-400">melody[]</code></span>
+              <button onclick="copyToClipboard('melodyText', 'melodyCopied')" class="text-teal-500 hover:text-teal-400 text-[11px] transition-colors flex items-center gap-0.5">
+                <span id="melodyCopied">Copy</span>
+              </button>
+            </label>
+            <textarea id="melodyText" rows="2" class="code-font text-xs bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 resize-none h-20" placeholder="e.g. { 523, 0, 523, 659, 784 }"></textarea>
+          </div>
+
+          <!-- Duration Array -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>Durations Array (ms) <code class="text-teal-400">durations[]</code></span>
+              <button onclick="copyToClipboard('durationText', 'durationsCopied')" class="text-teal-500 hover:text-teal-400 text-[11px] transition-colors flex items-center gap-0.5">
+                <span id="durationsCopied">Copy</span>
+              </button>
+            </label>
+            <textarea id="durationText" rows="2" class="code-font text-xs bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-300 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 resize-none h-20" placeholder="e.g. { 100, 100, 100, 200, 400 }"></textarea>
+          </div>
+        </div>
+
+        <!-- Apply Button -->
+        <div class="flex justify-end mt-1">
+          <button id="applyCodeBtn" class="bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500 hover:text-slate-950 active:bg-teal-600 font-bold text-xs px-5 py-2.5 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(20,184,166,0.05)]">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" /></svg>
+            Apply Code & Reconstruct Grid
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Workspace Panel (C++ Code Export & Instructions) -->
+    <section class="lg:col-span-4 flex flex-col gap-6">
+      
+      <!-- Quick Info / Overview -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+        <h2 class="text-sm font-bold tracking-wider text-teal-400 uppercase flex items-center gap-1.5">
+          <svg class="h-4.5 w-4.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          How It Works
+        </h2>
+        <ul class="text-xs text-slate-300 space-y-2.5">
+          <li class="flex gap-2 leading-relaxed">
+            <span class="text-teal-400 font-bold">1.</span>
+            <span><strong>Draw Note:</strong> Select the pencil, click on an empty grid slot to place a 200ms note. Click and drag the <em>right edge</em> to extend or shorten its duration.</span>
+          </li>
+          <li class="flex gap-2 leading-relaxed">
+            <span class="text-teal-400 font-bold">2.</span>
+            <span><strong>Move Note:</strong> Click on the body of a note and drag it to shift either its pitch (up/down) or start-time (left/right).</span>
+          </li>
+          <li class="flex gap-2 leading-relaxed">
+            <span class="text-teal-400 font-bold">3.</span>
+            <span><strong>No Overlaps:</strong> The editor automatically manages overlaps. Drawing or dropping a note onto another cuts or clips it, keeping the music monophonic!</span>
+          </li>
+          <li class="flex gap-2 leading-relaxed">
+            <span class="text-teal-400 font-bold">4.</span>
+            <span><strong>Buzzer Simulator:</strong> Click Play Sim to hear your melody utilizing high-fidelity Web Audio oscillators configured to sound exactly like Arduino piezos.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Exportable Complete Arduino Sketch -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 flex-grow min-h-[400px]">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="text-sm font-bold tracking-wider text-slate-200 uppercase flex items-center gap-1.5">
+              <svg class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Arduino Sketch Generator
+            </h2>
+            <p class="text-[10px] text-slate-400">Ready to copy and compile directly in Arduino IDE</p>
+          </div>
+          <button id="copySketchBtn" class="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1 shadow-md shadow-emerald-950/20">
+            <span id="copySketchLabel">Copy Sketch</span>
+          </button>
+        </div>
+
+        <div class="relative flex-grow flex flex-col">
+          <!-- Code Block Frame -->
+          <pre class="bg-slate-950 border border-slate-800 rounded-lg p-3 code-font text-[11px] text-emerald-400 overflow-y-auto max-h-[480px] lg:max-h-[520px] flex-grow leading-relaxed" id="arduinoCodeFrame">
+<!-- Dynamically compiled code loads here -->
+          </pre>
+        </div>
+
+        <div class="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5 text-[11px] text-emerald-400/90 leading-relaxed">
+          <strong>Tip:</strong> By default, this sketch targets digital <strong>Pin 8</strong>. Change the <code>BUZZER_PIN</code> definition at the top of the code to suit your wiring!
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-teal-500 text-slate-950 font-bold text-sm px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 pointer-events-none flex items-center gap-2 z-50">
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    <span id="toastMessage">Done!</span>
+  </div>
+
+  <!-- Footer Info -->
+  <footer class="border-t border-slate-900 bg-slate-950 text-center py-4 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      Arduino Tone Melody Designer &copy; 2026 • Interactive Development Tool
+    </div>
+  </footer>
+
+  <script>
+    // --- 1. Chromatic Note Definitions (Octaves 4 to 6) ---
+    // Decending array so Octave 6 notes show at the top of the piano roll canvas
+    const NOTE_NAMES = [
+      "B6", "A#6", "A6", "G#6", "G6", "F#6", "F6", "E6", "D#6", "D6", "C#6", "C6",
+      "B5", "A#5", "A5", "G#5", "G5", "F#5", "F5", "E5", "D#5", "D5", "C#5", "C5",
+      "B4", "A#4", "A4", "G#4", "G4", "F#4", "F4", "E4", "D#4", "D4", "C#4", "C4"
+    ];
+
+    // Corresponding frequencies rounded to closest Hz for neat Arduino arrays
+    const NOTE_FREQS = [
+      1976, 1865, 1760, 1661, 1568, 1480, 1397, 1319, 1245, 1175, 1109, 1047,
+      988,  932,  880,  831,  784,  740,  698,  659,  622,  587,  554,  523,
+      494,  466,  440,  415,  392,  369,  349,  330,  311,  294,  277,  262
+    ];
+
+    const TOTAL_STEPS = 50; // 5.0 seconds at 100ms per step
+    const STEP_DURATION_MS = 100; // 100ms
+
+    // --- 2. Application State ---
+    let notes = []; // Array of { id, pitchIdx, startStep, durationSteps }
+    let activeTool = 'pencil'; // 'pencil' or 'eraser'
+    let isPlaying = false;
+    let playHeadPosition = 0; // Steps (float for smooth transition during Web Audio)
+    let audioCtx = null;
+    let scheduledOscillators = []; // Track active oscillators for stopping
+    let scheduledTimeouts = []; // Track active timeouts for visual sweep
+    let volumeLevel = 0.3;
+
+    // Dragging action state
+    let isDragging = false;
+    let dragAction = null; // 'draw', 'move', 'resize'
+    let draggedNote = null;
+    let dragStartStep = 0;
+    let dragStartPitch = 0;
+    let dragOffsetSteps = 0;
+    let dragOffsetPitch = 0;
+
+    // --- 3. DOM Cache Elements ---
+    const canvas = document.getElementById('pianoRollCanvas');
+    const ctx = canvas.getContext('2d');
+    const gridContainer = document.getElementById('gridContainer');
+    const noteLabelsContainer = document.getElementById('noteLabels');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toolPencil = document.getElementById('toolPencil');
+    const toolEraser = document.getElementById('toolEraser');
+    const waveSelect = document.getElementById('waveSelect');
+    const melodyText = document.getElementById('melodyText');
+    const durationText = document.getElementById('durationText');
+    const applyCodeBtn = document.getElementById('applyCodeBtn');
+    const arduinoCodeFrame = document.getElementById('arduinoCodeFrame');
+    const copySketchBtn = document.getElementById('copySketchBtn');
+    const statBadge = document.getElementById('statBadge');
+    const hoverPitchDisplay = document.getElementById('hoverPitchDisplay');
+    const presetSelect = document.getElementById('presetSelect');
+    const loadPresetBtn = document.getElementById('loadPresetBtn');
+
+    // Dimension definitions
+    const ROW_HEIGHT = 22; // 22px height per note row
+    const COL_WIDTH = 22;  // 22px width per step column
+
+    // Preloaded Presets Data
+    const PRESETS = {
+      mario: [
+        { id: 1, pitchIdx: 19, startStep: 0, durationSteps: 1 }, // E5
+        { id: 2, pitchIdx: 19, startStep: 1, durationSteps: 1 }, // E5
+        // step 2 rest
+        { id: 3, pitchIdx: 19, startStep: 3, durationSteps: 1 }, // E5
+        // step 4 rest
+        { id: 4, pitchIdx: 23, startStep: 5, durationSteps: 1 }, // C5
+        { id: 5, pitchIdx: 19, startStep: 6, durationSteps: 2 }, // E5
+        { id: 6, pitchIdx: 16, startStep: 9, durationSteps: 2 }, // G5
+        // steps 11, 12 rests
+        { id: 7, pitchIdx: 28, startStep: 13, durationSteps: 2 } // G4
+      ],
+      starwars: [
+        { id: 1, pitchIdx: 33, startStep: 0, durationSteps: 1 }, // D4
+        { id: 2, pitchIdx: 33, startStep: 1, durationSteps: 1 }, // D4
+        { id: 3, pitchIdx: 33, startStep: 2, durationSteps: 1 }, // D4
+        { id: 4, pitchIdx: 28, startStep: 3, durationSteps: 4 }, // G4
+        { id: 5, pitchIdx: 21, startStep: 7, durationSteps: 4 }, // D5
+        { id: 6, pitchIdx: 23, startStep: 11, durationSteps: 1 }, // C5
+        { id: 7, pitchIdx: 24, startStep: 12, durationSteps: 1 }, // B4
+        { id: 8, pitchIdx: 26, startStep: 13, durationSteps: 1 }, // A4
+        { id: 9, pitchIdx: 16, startStep: 14, durationSteps: 4 }, // G5
+        { id: 10, pitchIdx: 21, startStep: 18, durationSteps: 2 }, // D5
+        { id: 11, pitchIdx: 23, startStep: 20, durationSteps: 1 }, // C5
+        { id: 12, pitchIdx: 24, startStep: 21, durationSteps: 1 }, // B4
+        { id: 13, pitchIdx: 26, startStep: 22, durationSteps: 1 }, // A4
+        { id: 14, pitchIdx: 16, startStep: 23, durationSteps: 4 }, // G5
+        { id: 15, pitchIdx: 21, startStep: 27, durationSteps: 2 }, // D5
+        { id: 16, pitchIdx: 23, startStep: 29, durationSteps: 1 }, // C5
+        { id: 17, pitchIdx: 24, startStep: 30, durationSteps: 1 }, // B4
+        { id: 18, pitchIdx: 23, startStep: 31, durationSteps: 1 }, // C5
+        { id: 19, pitchIdx: 26, startStep: 32, durationSteps: 4 }  // A4
+      ],
+      zelda: [
+        { id: 1, pitchIdx: 16, startStep: 0, durationSteps: 1 }, // G5
+        { id: 2, pitchIdx: 17, startStep: 1, durationSteps: 1 }, // F#5
+        { id: 3, pitchIdx: 20, startStep: 2, durationSteps: 1 }, // D#5
+        { id: 4, pitchIdx: 26, startStep: 3, durationSteps: 1 }, // A4
+        { id: 5, pitchIdx: 27, startStep: 4, durationSteps: 1 }, // G#4
+        { id: 6, pitchIdx: 19, startStep: 5, durationSteps: 1 }, // E5
+        { id: 7, pitchIdx: 15, startStep: 6, durationSteps: 1 }, // G#5
+        { id: 8, pitchIdx: 11, startStep: 7, durationSteps: 3 }  // C6
+      ],
+      scale: [
+        { id: 1, pitchIdx: 35, startStep: 0, durationSteps: 2 }, // C4
+        { id: 2, pitchIdx: 33, startStep: 2, durationSteps: 2 }, // D4
+        { id: 3, pitchIdx: 31, startStep: 4, durationSteps: 2 }, // E4
+        { id: 4, pitchIdx: 28, startStep: 6, durationSteps: 2 }, // G4
+        { id: 5, pitchIdx: 26, startStep: 8, durationSteps: 2 }, // A4
+        { id: 6, pitchIdx: 23, startStep: 10, durationSteps: 2 }, // C5
+        { id: 7, pitchIdx: 21, startStep: 12, durationSteps: 2 }, // D5
+        { id: 8, pitchIdx: 19, startStep: 14, durationSteps: 2 }, // E5
+        { id: 9, pitchIdx: 16, startStep: 16, durationSteps: 2 }, // G5
+        { id: 10, pitchIdx: 14, startStep: 18, durationSteps: 2 }, // A5
+        { id: 11, pitchIdx: 11, startStep: 20, durationSteps: 2 }, // C6
+        { id: 12, pitchIdx: 9, startStep: 22, durationSteps: 2 },  // D6
+        { id: 13, pitchIdx: 7, startStep: 24, durationSteps: 2 },  // E6
+        { id: 14, pitchIdx: 4, startStep: 26, durationSteps: 2 },  // G6
+        { id: 15, pitchIdx: 2, startStep: 28, durationSteps: 2 },  // A6
+        { id: 16, pitchIdx: 0, startStep: 30, durationSteps: 4 }   // B6
+      ]
+    };
+
+    // --- 4. Initialization ---
+    function init() {
+      renderNoteLabels();
+      loadPreset('mario'); // Initial melody on load
+      setupEventListeners();
+      redraw();
+    }
+
+    // Generate beautiful sticky note names label column
+    function renderNoteLabels() {
+      noteLabelsContainer.innerHTML = '';
+      NOTE_NAMES.forEach((name, idx) => {
+        const isSharp = name.includes('#');
+        const item = document.createElement('div');
+        item.style.height = `${ROW_HEIGHT}px`;
+        item.className = `flex items-center justify-between px-2 text-[10px] font-bold border-b border-slate-900 ${
+          isSharp ? 'bg-slate-950 text-teal-500/70' : 'bg-slate-900/95 text-slate-100'
+        }`;
+        item.innerHTML = `
+          <span>${name}</span>
+          <span class="text-[8.5px] text-slate-500 font-mono">${NOTE_FREQS[idx]}Hz</span>
+        `;
+        noteLabelsContainer.appendChild(item);
+      });
+    }
+
+    // --- 5. Event Listeners ---
+    function setupEventListeners() {
+      // Draw canvas tools selection
+      toolPencil.addEventListener('click', () => setTool('pencil'));
+      toolEraser.addEventListener('click', () => setTool('eraser'));
+
+      // Toolbar utilities
+      clearBtn.addEventListener('click', clearGrid);
+      playBtn.addEventListener('click', playSequencer);
+      pauseBtn.addEventListener('click', pauseSequencer);
+      stopBtn.addEventListener('click', stopSequencer);
+      
+      // Preset songs
+      loadPresetBtn.addEventListener('click', () => {
+        const selVal = presetSelect.value;
+        if (selVal && PRESETS[selVal]) {
+          loadPreset(selVal);
+          showToast(`Successfully loaded "${presetSelect.options[presetSelect.selectedIndex].text}"!`);
+        }
+      });
+
+      // Synchronizer arrays parsing
+      applyCodeBtn.addEventListener('click', applyCodeToGrid);
+
+      // Copying sketches
+      copySketchBtn.addEventListener('click', copySketchToClipboard);
+
+      // Mouse interactive handles on Canvas
+      canvas.addEventListener('mousedown', handleMouseDown);
+      canvas.addEventListener('mousemove', handleMouseMove);
+      canvas.addEventListener('mouseup', handleMouseUp);
+      canvas.addEventListener('mouseleave', handleMouseLeave);
+      canvas.addEventListener('dblclick', handleDoubleClick);
+
+      // Touch events support for mobile / tablets
+      canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+
+    // --- 6. Tool / Clear Controls ---
+    function setTool(toolName) {
+      activeTool = toolName;
+      if (toolName === 'pencil') {
+        toolPencil.className = "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/20 transition-all";
+        toolEraser.className = "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all";
+      } else {
+        toolEraser.className = "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 transition-all";
+        toolPencil.className = "flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition-all";
+      }
+    }
+
+    function clearGrid() {
+      notes = [];
+      stopSequencer();
+      redraw();
+      generateArduinoCode();
+      showToast("Grid cleared successfully.");
+    }
+
+    // Load presets and trigger code compiler
+    function loadPreset(key) {
+      if (!PRESETS[key]) return;
+      stopSequencer();
+      // Deep clone preset data
+      notes = PRESETS[key].map(n => ({...n, id: Date.now() + Math.random()}));
+      redraw();
+      generateArduinoCode();
+    }
+
+    // --- 7. Monophonic Resolver (Core Constraint Checker) ---
+    // Enforces that only one note can occupy any given 100ms step.
+    // Clips, resizes or deletes other note blocks that conflict with active note `activeId`.
+    function enforceMonophony(activeId) {
+      const active = notes.find(n => n.id === activeId);
+      if (!active) return;
+
+      const activeStart = active.startStep;
+      const activeEnd = active.startStep + active.durationSteps;
+
+      notes = notes.filter(other => {
+        if (other.id === active.id) return true;
+
+        const otherStart = other.startStep;
+        const otherEnd = other.startStep + other.durationSteps;
+
+        // Condition 1: Other note is completely covered by the new/updated note -> delete
+        if (otherStart >= activeStart && otherEnd <= activeEnd) {
+          return false;
+        }
+
+        // Condition 2: Other note overlaps left portion of the active note -> shrink other note's duration
+        if (otherStart < activeStart && otherEnd > activeStart && otherEnd <= activeEnd) {
+          other.durationSteps = activeStart - otherStart;
+          return other.durationSteps > 0;
+        }
+
+        // Condition 3: Other note overlaps right portion of active note -> move other note start rightwards
+        if (otherStart >= activeStart && otherStart < activeEnd && otherEnd > activeEnd) {
+          other.startStep = activeEnd;
+          other.durationSteps = otherEnd - activeEnd;
+          return other.durationSteps > 0;
+        }
+
+        // Condition 4: Active note is embedded inside other note -> split other note into two halves
+        if (otherStart < activeStart && otherEnd > activeEnd) {
+          const secondHalf = {
+            id: Date.now() + Math.random() + 10,
+            pitchIdx: other.pitchIdx,
+            startStep: activeEnd,
+            durationSteps: otherEnd - activeEnd
+          };
+          notes.push(secondHalf);
+          
+          other.durationSteps = activeStart - otherStart;
+          return other.durationSteps > 0;
+        }
+
+        return true;
+      });
+    }
+
+    // --- 8. Mouse & Canvas Interaction ---
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+      
+      const mouseX = (clientX - rect.left) * (canvas.width / rect.width);
+      const mouseY = (clientY - rect.top) * (canvas.height / rect.height);
+      
+      const step = Math.floor(mouseX / COL_WIDTH);
+      const pitch = Math.floor(mouseY / ROW_HEIGHT);
+      
+      return {
+        x: mouseX,
+        y: mouseY,
+        step: Math.max(0, Math.min(TOTAL_STEPS - 1, step)),
+        pitch: Math.max(0, Math.min(NOTE_NAMES.length - 1, pitch))
+      };
+    }
+
+    function findNoteAt(step, pitch) {
+      return notes.find(n => n.pitchIdx === pitch && step >= n.startStep && step < (n.startStep + n.durationSteps));
+    }
+
+    function findNoteByStep(step) {
+      return notes.find(n => step >= n.startStep && step < (n.startStep + n.durationSteps));
+    }
+
+    function handleMouseDown(e) {
+      const pos = getMousePos(e);
+      const noteUnderMouse = findNoteAt(pos.step, pos.pitch);
+
+      if (activeTool === 'eraser') {
+        if (noteUnderMouse) {
+          notes = notes.filter(n => n.id !== noteUnderMouse.id);
+          redraw();
+          generateArduinoCode();
+        }
+        return;
+      }
+
+      if (noteUnderMouse) {
+        // Decide between resize and move
+        const noteEndX = (noteUnderMouse.startStep + noteUnderMouse.durationSteps) * COL_WIDTH;
+        const dragMargin = 8; // Pixels buffer at right boundary for resize trigger
+        
+        if (pos.x >= noteEndX - dragMargin && pos.x <= noteEndX + 2) {
+          dragAction = 'resize';
+          draggedNote = noteUnderMouse;
+          isDragging = true;
+          dragStartStep = pos.step;
+        } else {
+          dragAction = 'move';
+          draggedNote = noteUnderMouse;
+          isDragging = true;
+          dragOffsetSteps = pos.step - noteUnderMouse.startStep;
+          dragOffsetPitch = pos.pitch - noteUnderMouse.pitchIdx;
+        }
+      } else {
+        // Click on empty space creates new note block (default 2 steps = 200ms)
+        const checkExistingInStep = findNoteByStep(pos.step);
+        if (checkExistingInStep) {
+          // If a note exists at that step, remove/clip it to allow drafting
+          notes = notes.filter(n => n.id !== checkExistingInStep.id);
+        }
+
+        const newNote = {
+          id: Date.now() + Math.random(),
+          pitchIdx: pos.pitch,
+          startStep: pos.step,
+          durationSteps: 2
+        };
+
+        // Clamp duration if creating note at the grid border
+        if (newNote.startStep + newNote.durationSteps > TOTAL_STEPS) {
+          newNote.durationSteps = TOTAL_STEPS - newNote.startStep;
+        }
+
+        notes.push(newNote);
+        draggedNote = newNote;
+        dragAction = 'draw';
+        dragStartStep = pos.step;
+        isDragging = true;
+        
+        enforceMonophony(newNote.id);
+        
+        // Audition trigger
+        playAuditionTone(NOTE_FREQS[pos.pitch]);
+      }
+
+      redraw();
+    }
+
+    function handleMouseMove(e) {
+      const pos = getMousePos(e);
+      
+      // Update Pitch Coordinates Info in footer
+      hoverPitchDisplay.innerText = `${NOTE_NAMES[pos.pitch]} (${NOTE_FREQS[pos.pitch]} Hz) • Time: ${(pos.step * 100 / 1000).toFixed(1)}s`;
+
+      if (!isDragging) {
+        // Handle cursor styles on note borders
+        const noteUnderMouse = findNoteAt(pos.step, pos.pitch);
+        if (noteUnderMouse && activeTool === 'pencil') {
+          const noteEndX = (noteUnderMouse.startStep + noteUnderMouse.durationSteps) * COL_WIDTH;
+          const dragMargin = 8;
+          if (pos.x >= noteEndX - dragMargin && pos.x <= noteEndX + 2) {
+            canvas.style.cursor = 'ew-resize';
+          } else {
+            canvas.style.cursor = 'grab';
+          }
+        } else if (activeTool === 'eraser') {
+          canvas.style.cursor = 'not-allowed';
+        } else {
+          canvas.style.cursor = 'crosshair';
+        }
+        return;
+      }
+
+      if (dragAction === 'resize') {
+        const newEndStep = pos.step;
+        const newDuration = newEndStep - draggedNote.startStep + 1;
+        if (newDuration >= 1 && draggedNote.startStep + newDuration <= TOTAL_STEPS) {
+          draggedNote.durationSteps = newDuration;
+          enforceMonophony(draggedNote.id);
+        }
+      } else if (dragAction === 'move') {
+        let newStart = pos.step - dragOffsetSteps;
+        let newPitch = pos.pitch - dragOffsetPitch;
+
+        // Clamp inside bounds
+        newStart = Math.max(0, Math.min(TOTAL_STEPS - draggedNote.durationSteps, newStart));
+        newPitch = Math.max(0, Math.min(NOTE_NAMES.length - 1, newPitch));
+
+        if (draggedNote.startStep !== newStart || draggedNote.pitchIdx !== newPitch) {
+          draggedNote.startStep = newStart;
+          draggedNote.pitchIdx = newPitch;
+          enforceMonophony(draggedNote.id);
+        }
+      } else if (dragAction === 'draw') {
+        const newDuration = pos.step - dragStartStep + 1;
+        if (newDuration >= 1 && draggedNote.startStep + newDuration <= TOTAL_STEPS) {
+          draggedNote.durationSteps = newDuration;
+          enforceMonophony(draggedNote.id);
+        }
+      }
+
+      redraw();
+    }
+
+    function handleMouseUp() {
+      if (isDragging) {
+        isDragging = false;
+        draggedNote = null;
+        dragAction = null;
+        generateArduinoCode();
+        redraw();
+      }
+    }
+
+    function handleMouseLeave() {
+      handleMouseUp();
+      hoverPitchDisplay.innerText = "Hover grid to explore";
+    }
+
+    function handleDoubleClick(e) {
+      const pos = getMousePos(e);
+      const noteUnderMouse = findNoteAt(pos.step, pos.pitch);
+      if (noteUnderMouse) {
+        notes = notes.filter(n => n.id !== noteUnderMouse.id);
+        redraw();
+        generateArduinoCode();
+        showToast("Note deleted");
+      }
+    }
+
+    // --- Touch Support Adapters ---
+    function handleTouchStart(e) {
+      e.preventDefault();
+      handleMouseDown(e);
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      handleMouseMove(e);
+    }
+
+    function handleTouchEnd(e) {
+      e.preventDefault();
+      handleMouseUp();
+    }
+
+    // --- 9. Drawing & Graphics Renderer ---
+    function redraw() {
+      // Clear canvas buffer
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // A: Draw Horizontal Guidelines (Staff Lines)
+      for (let i = 0; i < NOTE_NAMES.length; i++) {
+        const isSharp = NOTE_NAMES[i].includes('#');
+        ctx.fillStyle = isSharp ? '#090d16' : '#0f172a';
+        ctx.fillRect(0, i * ROW_HEIGHT, canvas.width, ROW_HEIGHT);
+
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, (i + 1) * ROW_HEIGHT);
+        ctx.lineTo(canvas.width, (i + 1) * ROW_HEIGHT);
+        ctx.stroke();
+      }
+
+      // B: Draw Vertical Timing Lines (100ms grids)
+      for (let s = 0; s < TOTAL_STEPS; s++) {
+        const isHalfSec = (s % 5 === 0);
+        const isSec = (s % 10 === 0);
+
+        ctx.beginPath();
+        ctx.moveTo(s * COL_WIDTH, 0);
+        ctx.lineTo(s * COL_WIDTH, canvas.height);
+
+        if (isSec) {
+          ctx.strokeStyle = 'rgba(20, 184, 166, 0.4)'; // Strong Teal line every 1 second
+          ctx.lineWidth = 1.5;
+        } else if (isHalfSec) {
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)'; // Faint gray line every 0.5s
+          ctx.lineWidth = 1;
+        } else {
+          ctx.strokeStyle = 'rgba(30, 41, 59, 0.2)'; // Very subtle grid lines
+          ctx.lineWidth = 0.5;
+        }
+        ctx.stroke();
+
+        // Print Time stamp at topmost cell
+        if (isHalfSec) {
+          ctx.fillStyle = 'rgba(20, 184, 166, 0.8)';
+          ctx.font = '700 8.5px sans-serif';
+          ctx.fillText(`${(s * 100 / 1000).toFixed(1)}s`, s * COL_WIDTH + 3, 10);
+        }
+      }
+
+      // C: Draw Custom Note Blocks
+      notes.forEach(note => {
+        const x = note.startStep * COL_WIDTH;
+        const y = note.pitchIdx * ROW_HEIGHT;
+        const w = note.durationSteps * COL_WIDTH;
+        const h = ROW_HEIGHT;
+
+        // Custom Gradient coloring
+        const grad = ctx.createLinearGradient(x, y, x + w, y);
+        grad.addColorStop(0, '#14b8a6'); // Teal
+        grad.addColorStop(1, '#0ea5e9'); // Sky blue
+
+        ctx.fillStyle = grad;
+        ctx.strokeStyle = '#020617';
+        ctx.lineWidth = 1.5;
+
+        // Render rounded rect for a polished feel
+        drawRoundedRect(ctx, x + 1, y + 1.5, w - 2, h - 3, 5, true, true);
+
+        // Highlight right boundary drag handle (resize cue)
+        ctx.fillStyle = '#06b6d4';
+        ctx.fillRect(x + w - 4, y + 4, 2, h - 8);
+
+        // Print Note Text details inside
+        if (w > 32) {
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 9px monospace';
+          ctx.fillText(NOTE_NAMES[note.pitchIdx], x + 6, y + 14);
+        }
+      });
+
+      // D: Draw Playback sweep head tracker
+      if (isPlaying) {
+        const sweepX = playHeadPosition * COL_WIDTH;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#f87171';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(sweepX, 0);
+        ctx.lineTo(sweepX, canvas.height);
+        ctx.stroke();
+        
+        // Reset shadow defaults to prevent lag
+        ctx.shadowBlur = 0;
+      }
+
+      // E: Update Stat Badge
+      statBadge.innerText = `${notes.length} note${notes.length === 1 ? '' : 's'} placed`;
+    }
+
+    // Helper: Rounded corner drawers
+    function drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+      if (width < 2 * radius) radius = width / 2;
+      if (height < 2 * radius) radius = height / 2;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + width, y, x + width, y + height, radius);
+      ctx.arcTo(x + width, y + height, x, y + height, radius);
+      ctx.arcTo(x, y + height, x, y, radius);
+      ctx.arcTo(x, y, x + width, y, radius);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    // --- 10. Web Audio Synthesizer Player ---
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Fire quick beep when drawing/dragging notes
+    function playAuditionTone(freq) {
+      try {
+        initAudioContext();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.type = waveSelect.value;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gainNode.gain.setValueAtTime(volumeLevel, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (err) {
+        console.warn("AudioContext block:", err);
+      }
+    }
+
+    function playSequencer() {
+      if (notes.length === 0) {
+        showToast("Add some notes first to play!");
+        return;
+      }
+
+      try {
+        initAudioContext();
+        stopSequencer(); // Reset any playing contexts
+
+        isPlaying = true;
+        playBtn.classList.add('hidden');
+        pauseBtn.classList.remove('hidden');
+
+        const { melody, durations } = compileMelodyArrays();
+        const startTime = audioCtx.currentTime;
+        let cumulativeTime = 0;
+
+        // Schedule all Note Tones
+        for (let i = 0; i < melody.length; i++) {
+          const freq = melody[i];
+          const durSec = durations[i] / 1000;
+          const oscTime = startTime + cumulativeTime;
+
+          if (freq > 0) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = waveSelect.value;
+            osc.frequency.setValueAtTime(freq, oscTime);
+
+            // Clean fast envelope to prevent buzzer clipping "pops"
+            gain.gain.setValueAtTime(0, oscTime);
+            gain.gain.linearRampToValueAtTime(volumeLevel, oscTime + 0.005);
+            gain.gain.setValueAtTime(volumeLevel, oscTime + durSec - 0.015);
+            gain.gain.linearRampToValueAtTime(0.0, oscTime + durSec - 0.002);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(oscTime);
+            osc.stop(oscTime + durSec);
+
+            scheduledOscillators.push(osc);
+          }
+
+          // Visual playhead timer callbacks for precise animation syncing
+          const currentStepRef = cumulativeTime * 10; // Convert sec to steps
+          const timeoutId = setTimeout(() => {
+            if (isPlaying) {
+              playHeadPosition = currentStepRef;
+              redraw();
+            }
+          }, cumulativeTime * 1000);
+
+          scheduledTimeouts.push(timeoutId);
+          cumulativeTime += durSec;
+        }
+
+        // Final ending check timeout callback
+        const endTimeoutId = setTimeout(() => {
+          stopSequencer();
+        }, cumulativeTime * 1000);
+        scheduledTimeouts.push(endTimeoutId);
+
+        // Frame rate interpolator for smooth visual playhead tracking
+        let animStart = performance.now();
+        function updateSmoothPlayhead() {
+          if (!isPlaying) return;
+          const elapsedSec = audioCtx.currentTime - startTime;
+          playHeadPosition = elapsedSec * 10;
+          redraw();
+          requestAnimationFrame(updateSmoothPlayhead);
+        }
+        requestAnimationFrame(updateSmoothPlayhead);
+
+      } catch (err) {
+        console.error(err);
+        showToast("Error starting Web Audio engine");
+      }
+    }
+
+    function pauseSequencer() {
+      // Pause acts as Stop in simple audio schedulers but maintains current position representation.
+      stopSequencer();
+    }
+
+    function stopSequencer() {
+      isPlaying = false;
+      playHeadPosition = 0;
+      
+      // Stop Web Audio nodes
+      scheduledOscillators.forEach(osc => {
+        try { osc.stop(); } catch(e){}
+      });
+      scheduledOscillators = [];
+
+      // Clear pending visual timeouts
+      scheduledTimeouts.forEach(tId => clearTimeout(tId));
+      scheduledTimeouts = [];
+
+      playBtn.classList.remove('hidden');
+      pauseBtn.classList.add('hidden');
+      
+      redraw();
+    }
+
+    // --- 11. Arduino Array Compilers ---
+    function compileMelodyArrays() {
+      if (notes.length === 0) {
+        return { melody: [], durations: [] };
+      }
+
+      // Sort notes by timeline start sequence
+      const sortedNotes = [...notes].sort((a, b) => a.startStep - b.startStep);
+      const lastNote = sortedNotes[sortedNotes.length - 1];
+      const maxBound = lastNote.startStep + lastNote.durationSteps;
+
+      const melody = [];
+      const durations = [];
+      let step = 0;
+
+      while (step < maxBound) {
+        const activeNote = sortedNotes.find(n => n.startStep === step);
+        if (activeNote) {
+          melody.push(NOTE_FREQS[activeNote.pitchIdx]);
+          durations.push(activeNote.durationSteps * STEP_DURATION_MS);
+          step += activeNote.durationSteps;
+        } else {
+          // Identify gap / rest
+          const nextNote = sortedNotes.find(n => n.startStep > step);
+          const nextStart = nextNote ? nextNote.startStep : maxBound;
+          const gapSize = nextStart - step;
+          
+          melody.push(0); // 0 Hz indicates a rest
+          durations.push(gapSize * STEP_DURATION_MS);
+          step = nextStart;
+        }
+      }
+
+      return { melody, durations };
+    }
+
+    function generateArduinoCode() {
+      const { melody, durations } = compileMelodyArrays();
+
+      // Display in Synced Edit Panels
+      melodyText.value = melody.length > 0 ? `{ ${melody.join(', ')} }` : `{ }`;
+      durationText.value = durations.length > 0 ? `{ ${durations.join(', ')} }` : `{ }`;
+
+      // Build complete copy-paste Arduino IDE code block
+      const noteCount = melody.length;
+      const melodyCpp = melody.length > 0 ? melody.join(', ') : '';
+      const durationCpp = durations.length > 0 ? durations.join(', ') : '';
+
+      const fullSketch = `/*
+  Arduino Tone Melody Player
+  --------------------------------------------------
+  Generated dynamically by Arduino Tone Melody Designer.
+  Use this code to simulate and play your visual designs
+  directly on an Arduino board using a piezo-buzzer.
+  
+  Wiring Connection:
+  - Positive lead (buzzer): Pin 8 (or adjust BUZZER_PIN below)
+  - Negative lead (buzzer): Ground (GND)
+*/
+
+// Define the digital pin linked to the piezo buzzer
+const int BUZZER_PIN = 8; 
+
+// Number of tones in the melody
+const int NOTE_COUNT = ${noteCount};
+
+// Array of musical frequencies in Hz (0 represents a Rest/Silent gap)
+const int melody[] PROGMEM = {
+  ${melodyCpp}
+};
+
+// Durations for each musical element in milliseconds (100ms blocks)
+const int durations[] PROGMEM = {
+  ${durationCpp}
+};
+
+void setup() {
+  pinMode(BUZZER_PIN, OUTPUT);
+  playMelody();
+}
+
+void loop() {
+  // Empty. Restart the board to repeat, or call playMelody() here 
+  // with a delay if you want the song to loop continuously!
+}
+
+// Memory-efficient playback routine utilizing PROGMEM Flash
+void playMelody() {
+  for (int thisNote = 0; thisNote < NOTE_COUNT; thisNote++) {
+    // Read arrays directly from flash memory
+    int notePitch = pgm_read_word_near(melody + thisNote);
+    int noteDuration = pgm_read_word_near(durations + thisNote);
+
+    if (notePitch > 0) {
+      // Execute non-blocking Arduino tone function
+      tone(BUZZER_PIN, notePitch, noteDuration);
+    } else {
+      // noTone turns off audio wave generation
+      noTone(BUZZER_PIN);
+    }
+
+    // To cleanly separate consecutive notes of same pitch, 
+    // we delay for the note duration. You can tweak this delay 
+    // multiplier to change pacing characteristics.
+    delay(noteDuration);
+    
+    // Clear pins before advancing
+    noTone(BUZZER_PIN);
+  }
+}`;
+
+      arduinoCodeFrame.innerText = fullSketch;
+    }
+
+    // --- 12. Bidirectional Parsing Sync Logic (Code -> Grid Grid Reconstructor) ---
+    function parseCodeArrayString(str) {
+      const braceMatch = str.match(/\{([^}]+)\}/);
+      if (!braceMatch) return [];
+      return braceMatch[1].split(',')
+        .map(s => parseInt(s.trim(), 10))
+        .filter(n => !isNaN(n));
+    }
+
+    function applyCodeToGrid() {
+      const melodyArray = parseCodeArrayString(melodyText.value);
+      const durationsArray = parseCodeArrayString(durationText.value);
+
+      if (melodyArray.length === 0 || durationsArray.length === 0) {
+        showToast("Error: Missing arrays or wrong format!", true);
+        return;
+      }
+
+      if (melodyArray.length !== durationsArray.length) {
+        showToast(`Mismatch error: Melody has ${melodyArray.length} items but Durations has ${durationsArray.length}!`, true);
+        return;
+      }
+
+      // Reconstruct note array
+      const parsedNotes = [];
+      let stepTime = 0;
+
+      for (let i = 0; i < melodyArray.length; i++) {
+        const freq = melodyArray[i];
+        const durationMs = durationsArray[i];
+        const durationSteps = Math.round(durationMs / 100);
+
+        if (stepTime + durationSteps > TOTAL_STEPS) {
+          showToast("Warning: Loaded code exceeded the 5.0s timeline capacity. Truncating excess notes.", true);
+          break;
+        }
+
+        if (freq > 0 && durationSteps > 0) {
+          // Identify closest pitch index in scale
+          let closestPitchIdx = 0;
+          let minDiff = Infinity;
+          for (let p = 0; p < NOTE_FREQS.length; p++) {
+            const diff = Math.abs(NOTE_FREQS[p] - freq);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestPitchIdx = p;
+            }
+          }
+
+          parsedNotes.push({
+            id: Date.now() + i + Math.random(),
+            pitchIdx: closestPitchIdx,
+            startStep: stepTime,
+            durationSteps: durationSteps
+          });
+        }
+
+        stepTime += durationSteps;
+      }
+
+      notes = parsedNotes;
+      redraw();
+      generateArduinoCode();
+      showToast("Grid successfully synchronized with custom C++ arrays!");
+    }
+
+    // --- 13. UI Utilities & Copy Handlers ---
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      
+      toastMsg.innerText = message;
+      if (isError) {
+        toast.className = "fixed bottom-4 right-4 bg-rose-600 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 z-50";
+      } else {
+        toast.className = "fixed bottom-4 right-4 bg-teal-500 text-slate-950 font-bold text-sm px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-center gap-2 z-50";
+      }
+
+      setTimeout(() => {
+        toast.className = "fixed bottom-4 right-4 bg-teal-500 text-slate-950 font-bold text-sm px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 pointer-events-none flex items-center gap-2 z-50";
+      }, 3500);
+    }
+
+    function copyToClipboard(elementId, labelId) {
+      const textarea = document.getElementById(elementId);
+      textarea.select();
+      document.execCommand('copy');
+      
+      const lbl = document.getElementById(labelId);
+      lbl.innerText = "Copied! ✓";
+      lbl.classList.remove('text-teal-500');
+      lbl.classList.add('text-emerald-400');
+
+      setTimeout(() => {
+        lbl.innerText = "Copy";
+        lbl.classList.add('text-teal-500');
+        lbl.classList.remove('text-emerald-400');
+      }, 2000);
+    }
+
+    function copySketchToClipboard() {
+      const codeBlock = arduinoCodeFrame.innerText;
+      
+      // Use hidden fallback textarea for secure copy action inside Sandbox iframe environments
+      const hiddenInput = document.createElement('textarea');
+      hiddenInput.value = codeBlock;
+      document.body.appendChild(hiddenInput);
+      hiddenInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(hiddenInput);
+
+      const label = document.getElementById('copySketchLabel');
+      label.innerText = "Copied Sketch! ✓";
+      setTimeout(() => {
+        label.innerText = "Copy Sketch";
+      }, 2000);
+      showToast("Arduino Sketch copied to clipboard!");
+    }
+
+    // Run Initializers
+    window.onload = init;
+  </script>
+</body>
+</html>
