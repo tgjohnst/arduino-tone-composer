@@ -1,5 +1,7 @@
 # arduino-tone-composer
-Helper webapp for arduino music generation/simulation. 
+Helper webapp for arduino music generation/simulation.
+
+![Arduino Composer Screenshot](ardu_composer_screenshot.png)
 
 # **🎵 Arduino Tone Melody Designer & Simulator**
 
